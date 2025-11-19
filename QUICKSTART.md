@@ -28,7 +28,7 @@ pip install -r requirements.txt
 Open the `.env` file and replace `your_deepgram_api_key_here` with your actual Deepgram API key:
 
 ```env
-GOOGLE_API_KEY=AIzaSyDRTLt6DaexbKZre6owW41-ggXusFa7zxg
+GOOGLE_API_KEY=YOUR_ACTUAL_KEY_HERE
 DEEPGRAM_API_KEY=YOUR_ACTUAL_KEY_HERE
 ```
 
