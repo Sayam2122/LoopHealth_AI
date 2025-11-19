@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loop AI Hospital Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: gradientShift 10s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .mic-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        .mic-button {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .mic-button.recording {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .mic-button.processing {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .mic-button.playing {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .mic-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 15px 40px rgba(245, 87, 108, 0.8);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        .status-text {
+            font-size: 18px;
+            color: #333;
+            margin-top: 20px;
+            min-height: 30px;
+            font-weight: 500;
+        }
+
+        .transcript {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-radius: 15px;
+            min-height: 60px;
+            display: none;
+            border-left: 4px solid #667eea;
+            text-align: left;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .transcript.show {
+            display: block;
+        }
+
+        .transcript-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .transcript-text {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #aiResponse {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left-color: #ff9800;
+        }
+
+        #aiResponse .transcript-label {
+            color: #ff9800;
+        }
+
+        .error-message {
+            color: #f5576c;
+            margin-top: 20px;
+            padding: 15px;
+            background: #ffe0e0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f4f8;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .instructions strong {
+            color: #333;
+        }
+
+        .conversation-history {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .conversation-history.show {
+            display: block;
+        }
+
+        .conversation-history h3 {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            border-left: 3px solid #667eea;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .history-user {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .history-ai {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .suggested-followups {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .suggested-followups.show {
+            display: block;
+        }
+
+        .suggested-followups h3 {
+            font-size: 16px;
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+
+        .followup-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .followup-button:hover {
+            background: #4caf50;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .new-chat-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .new-chat-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .clear-button {
+            background: #f5f5f5;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+
+        .clear-button:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Loop AI Hospital Assistant</h1>
+        <p class="subtitle">Your Hospital Network Voice Assistant</p>
+
+        <div class="mic-container">
+            <button id="micButton" class="mic-button" aria-label="Microphone">
+                🎤
+            </button>
+        </div>
+
+        <div id="statusText" class="status-text">Click the microphone to start</div>
+
+        <div id="transcript" class="transcript">
+            <div class="transcript-label">📝 You said:</div>
+            <div id="transcriptText" class="transcript-text"></div>
+        </div>
+
+        <div id="aiResponse" class="transcript">
+            <div class="transcript-label">🤖 Loop AI:</div>
+            <div id="aiResponseText" class="transcript-text"></div>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div class="action-buttons">
+            <button id="newChatButton" class="action-button new-chat-button" style="display: none;">
+                🔄 New Chat
+            </button>
+            <button id="clearButton" class="action-button clear-button" style="display: none;">
+                🗑️ Clear History
+            </button>
+        </div>
+
+        <div id="suggestedFollowups" class="suggested-followups">
+            <h3>💡 Suggested Follow-ups:</h3>
+            <div id="followupButtons"></div>
+        </div>
+
+        <div id="conversationHistory" class="conversation-history">
+            <h3>
+                📝 Conversation History
+                <span style="font-size: 12px; font-weight: normal; color: #999;">
+                    (<span id="historyCount">0</span> exchanges)
+                </span>
+            </h3>
+            <div id="historyItems"></div>
+        </div>
+
+        <div class="instructions">
+            <strong>Try asking:</strong><br>
+            • "Tell me 3 hospitals around Bangalore"<br>
+            • "Is Manipal Sarjapur in Bangalore in my network?"<br>
+            • "Show me hospitals in Delhi"
+        </div>
+    </div>
+
+    <script>
+        const micButton = document.getElementById('micButton');
+        const statusText = document.getElementById('statusText');
+        const transcript = document.getElementById('transcript');
+        const transcriptText = document.getElementById('transcriptText');
+        const aiResponse = document.getElementById('aiResponse');
+        const aiResponseText = document.getElementById('aiResponseText');
+        const errorMessage = document.getElementById('errorMessage');
+        const newChatButton = document.getElementById('newChatButton');
+        const clearButton = document.getElementById('clearButton');
+        const suggestedFollowups = document.getElementById('suggestedFollowups');
+        const followupButtons = document.getElementById('followupButtons');
+        const conversationHistory = document.getElementById('conversationHistory');
+        const historyItems = document.getElementById('historyItems');
+        const historyCount = document.getElementById('historyCount');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let isProcessing = false;
+        let audioElement = null;
+        let conversationLog = [];
+
+        // Check for browser support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showError('Your browser does not support audio recording. Please use Chrome, Firefox, or Edge.');
+            micButton.disabled = true;
+        }
+
+        micButton.addEventListener('click', async () => {
+            if (isProcessing) return;
+
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        async function startRecording() {
+            try {
+                hideError();
+                transcript.classList.remove('show');
+                aiResponse.classList.remove('show');
+
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+
+                // Create media recorder
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+
+                audioChunks = [];
+
+                mediaRecorder.addEventListener('dataavailable', event => {
+                    audioChunks.push(event.data);
+                });
+
+                mediaRecorder.addEventListener('stop', async () => {
+                    // Stop all tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Process the recording
+                    await processRecording();
+                });
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // Update UI
+                micButton.classList.add('recording');
+                micButton.textContent = '⏹️';
+                statusText.textContent = 'Recording... Click to stop';
+
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                showError('Could not access microphone. Please grant permission and try again.');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                isRecording = false;
+
+                // Update UI
+                micButton.classList.remove('recording');
+                micButton.textContent = '🎤';
+                statusText.textContent = 'Processing...';
+            }
+        }
+
+        async function processRecording() {
+            try {
+                isProcessing = true;
+                micButton.disabled = true;
+                micButton.classList.add('processing');
+                statusText.textContent = 'Loop AI is thinking...';
+
+                // Create audio blob
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.webm');
+
+                // Send to backend
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Server error');
+                }
+
+                // Extract transcript and AI response from headers
+                const userTranscript = response.headers.get('X-Transcript');
+                const aiTextResponse = response.headers.get('X-AI-Response');
+
+                // Display transcript
+                if (userTranscript) {
+                    transcriptText.textContent = userTranscript;
+                    transcript.classList.add('show');
+                }
+
+                // Display AI response text
+                if (aiTextResponse) {
+                    aiResponseText.textContent = aiTextResponse;
+                    aiResponse.classList.add('show');
+                }
+
+                // Add to conversation log
+                if (userTranscript && aiTextResponse) {
+                    conversationLog.push({
+                        user: userTranscript,
+                        ai: aiTextResponse,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    updateConversationHistory();
+                    generateFollowups(userTranscript, aiTextResponse);
+                    showActionButtons();
+                }
+
+                // Get audio response
+                const audioResponseBlob = await response.blob();
+
+                // Play audio response
+                await playAudioResponse(audioResponseBlob);
+
+            } catch (error) {
+                console.error('Error processing recording:', error);
+                showError(`Error: ${error.message}`);
+                resetUI();
+            }
+        }
+
+        async function playAudioResponse(audioBlob) {
+            try {
+                statusText.textContent = 'Loop AI is speaking...';
+                micButton.classList.remove('processing');
+                micButton.classList.add('playing');
+
+                // Create audio element
+                audioElement = new Audio(URL.createObjectURL(audioBlob));
+
+                // Play audio
+                await audioElement.play();
+
+                // Wait for audio to finish
+                audioElement.addEventListener('ended', () => {
+                    URL.revokeObjectURL(audioElement.src);
+                    resetUI();
+                });
+
+                audioElement.addEventListener('error', (e) => {
+                    console.error('Audio playback error:', e);
+                    showError('Could not play audio response');
+                    resetUI();
+                });
+
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                showError('Could not play audio response');
+                resetUI();
+            }
+        }
+
+        function resetUI() {
+            isProcessing = false;
+            micButton.disabled = false;
+            micButton.classList.remove('recording', 'processing', 'playing');
+            micButton.textContent = '🎤';
+            statusText.textContent = 'Click the microphone to start';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function updateConversationHistory() {
+            if (conversationLog.length === 0) {
+                conversationHistory.classList.remove('show');
+                return;
+            }
+
+            historyCount.textContent = conversationLog.length;
+            historyItems.innerHTML = '';
+
+            // Show last 5 conversations
+            const recentConversations = conversationLog.slice(-5).reverse();
+            
+            recentConversations.forEach((conv, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-user">👤 You: ${conv.user}</div>
+                    <div class="history-ai">🤖 Loop AI: ${conv.ai}</div>
+                `;
+                historyItems.appendChild(historyItem);
+            });
+
+            conversationHistory.classList.add('show');
+        }
+
+        function generateFollowups(userQuery, aiResponse) {
+            const followupSuggestions = [];
+
+            // Context-aware followup generation
+            if (userQuery.toLowerCase().includes('bangalore') || aiResponse.toLowerCase().includes('bangalore')) {
+                followupSuggestions.push("Show me more hospitals in Bangalore");
+                followupSuggestions.push("Are there any Apollo hospitals in Bangalore?");
+            } else if (userQuery.toLowerCase().includes('delhi')) {
+                followupSuggestions.push("Tell me about hospitals in Delhi");
+                followupSuggestions.push("Show me Fortis hospitals in Delhi");
+            }
+
+            if (userQuery.toLowerCase().includes('manipal')) {
+                followupSuggestions.push("What other Manipal hospitals are available?");
+                followupSuggestions.push("Show me Manipal hospitals in other cities");
+            }
+
+            if (aiResponse.toLowerCase().includes('found')) {
+                followupSuggestions.push("Can you give me more details?");
+                followupSuggestions.push("Are there any alternatives?");
+            }
+
+            // Generic followups
+            if (followupSuggestions.length < 3) {
+                followupSuggestions.push("Show me hospitals in Mumbai");
+                followupSuggestions.push("Tell me about hospitals in Chennai");
+            }
+
+            // Display followups (max 3)
+            followupButtons.innerHTML = '';
+            followupSuggestions.slice(0, 3).forEach(suggestion => {
+                const button = document.createElement('button');
+                button.className = 'followup-button';
+                button.textContent = `💬 ${suggestion}`;
+                button.onclick = () => handleFollowupClick(suggestion);
+                followupButtons.appendChild(button);
+            });
+
+            suggestedFollowups.classList.add('show');
+        }
+
+        async function handleFollowupClick(query) {
+            // Simulate speaking the query
+            statusText.textContent = `Processing: "${query}"`;
+            
+            // Create a text-to-speech blob and send it
+            const utterance = new SpeechSynthesisUtterance(query);
+            
+            // For now, we'll use the Web Speech API to convert text to audio
+            // In production, you might want to record this properly
+            try {
+                isProcessing = true;
+                micButton.disabled = true;
+                micButton.classList.add('processing');
+                
+                // Create a simple audio recording simulation
+                // In a real scenario, you'd convert the text to audio properly
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text_query: query })
+                });
+
+                // For now, just display the query as if it was spoken
+                transcriptText.textContent = query;
+                transcript.classList.add('show');
+                
+                if (!response.ok) throw new Error('Server error');
+                
+                const aiTextResponse = response.headers.get('X-AI-Response');
+                
+                if (aiTextResponse) {
+                    aiResponseText.textContent = aiTextResponse;
+                    aiResponse.classList.add('show');
+                    
+                    conversationLog.push({
+                        user: query,
+                        ai: aiTextResponse,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    updateConversationHistory();
+                    generateFollowups(query, aiTextResponse);
+                }
+                
+                const audioResponseBlob = await response.blob();
+                await playAudioResponse(audioResponseBlob);
+                
+            } catch (error) {
+                console.error('Followup error:', error);
+                showError('Could not process followup query');
+                resetUI();
+            }
+        }
+
+        function showActionButtons() {
+            newChatButton.style.display = 'flex';
+            clearButton.style.display = 'flex';
+        }
+
+        newChatButton.addEventListener('click', () => {
+            // Start fresh conversation
+            transcript.classList.remove('show');
+            aiResponse.classList.remove('show');
+            suggestedFollowups.classList.remove('show');
+            hideError();
+            statusText.textContent = 'New chat started. Click the microphone to begin.';
+        });
+
+        clearButton.addEventListener('click', () => {
+            if (confirm('Clear all conversation history?')) {
+                conversationLog = [];
+                updateConversationHistory();
+                transcript.classList.remove('show');
+                aiResponse.classList.remove('show');
+                suggestedFollowups.classList.remove('show');
+                newChatButton.style.display = 'none';
+                clearButton.style.display = 'none';
+                statusText.textContent = 'History cleared. Click the microphone to start.';
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (audioElement) {
+                audioElement.pause();
+                audioElement = null;
+            }
+        });
+    </script>
+</body>
+</html>
